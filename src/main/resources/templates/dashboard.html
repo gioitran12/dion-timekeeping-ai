@@ -357,88 +357,12 @@
 <body>
 
     <!-- 1. SIDEBAR THEO PHONG CÁCH DION WORKPLACE -->
-    <aside class="sidebar">
-        <!-- Logo Brand -->
-        <div class="brand-header">
-            <a href="/" class="brand-logo">
-                <div class="brand-icon-box">
-                    <i class="bi bi-person-bounding-box"></i>
-                </div>
-                <div>
-                    <div>DION</div>
-                    <div class="brand-subtext">Digital Innovation</div>
-                </div>
-            </a>
-            <i class="bi bi-layout-sidebar-inset text-secondary" role="button"></i>
-        </div>
-
-        <!-- Menu Section: WORKSPACE -->
-        <div class="sidebar-section-title">Workspace</div>
-        <a href="/" class="nav-link-custom active">
-            <i class="bi bi-house-door-fill"></i> Home
-        </a>
-        <a href="/timekeeping/scan" class="nav-link-custom">
-            <i class="bi bi-camera-video-fill text-info"></i> AI Chấm công
-        </a>
-        <a href="/timekeeping/history" class="nav-link-custom">
-            <i class="bi bi-calendar3"></i> Lịch làm việc
-        </a>
-        <a href="#" class="nav-link-custom">
-            <i class="bi bi-briefcase"></i> Công việc
-        </a>
-        <a href="#" class="nav-link-custom">
-            <i class="bi bi-file-earmark-text"></i> Báo cáo
-        </a>
-
-        <!-- Menu Section: QUẢN LÝ (Chỉ hiển thị cho ADMIN) -->
-        <div sec:authorize="hasRole('ADMIN')">
-            <div class="sidebar-section-title d-flex justify-content-between align-items-center">
-                <span>Quản lý hệ thống</span>
-                <span class="badge bg-danger" style="font-size: 0.6rem;">ADMIN</span>
-            </div>
-            <a href="/admin/employees" class="nav-link-custom">
-                <i class="bi bi-people-fill text-primary"></i> Quản lý nhân sự
-            </a>
-            <a href="/admin/register-face" class="nav-link-custom">
-                <i class="bi bi-person-bounding-box text-info"></i> Đăng ký khuôn mặt
-            </a>
-            <a href="/admin/reports" class="nav-link-custom">
-                <i class="bi bi-bar-chart-line-fill text-success"></i> Báo cáo & Thống kê
-            </a>
-            <a href="/admin/settings" class="nav-link-custom">
-                <i class="bi bi-sliders text-warning"></i> Cài đặt hệ thống
-            </a>
-        </div>
-
-        <!-- Footer Profile -->
-        <div class="sidebar-footer">
-            <div class="d-flex align-items-center gap-2">
-                <div class="avatar-circle">
-                    <span th:text="${employee != null ? #strings.substring(employee.fullName, 0, 1) : 'U'}">Q</span>
-                </div>
-                <div style="overflow: hidden;">
-                    <div class="text-white fw-bold small text-truncate" th:text="${employee != null ? employee.fullName : 'Quản trị viên'}">Quản Trị Viên</div>
-                    <div style="font-size: 0.72rem; color: #64748b;" th:text="${employee != null ? employee.position : 'System Administrator'}">System Administrator</div>
-                </div>
-            </div>
-            <a href="/logout" class="text-secondary" title="Đăng xuất"><i class="bi bi-box-arrow-right fs-5"></i></a>
-        </div>
-    </aside>
+    <aside th:replace="~{fragments/navbar :: sidebar('home')}"></aside>
 
     <!-- 2. MAIN CONTENT WRAPPER -->
     <div class="main-wrapper">
         <!-- Top Navbar -->
-        <header class="top-navbar">
-            <p class="breadcrumb-text">Dion Workplace / <strong>Tổng quan</strong></p>
-            <div class="d-flex align-items-center gap-3">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Tìm kiếm Ctrl K...">
-                </div>
-                <button class="btn btn-light rounded-circle p-2 text-secondary border"><i class="bi bi-bell"></i></button>
-                <div class="avatar-circle" style="width: 34px; height: 34px;">GT</div>
-            </div>
-        </header>
+        <header th:replace="~{fragments/navbar :: topbar('Tổng quan')}"></header>
 
         <!-- Main Body -->
         <main class="content-container">

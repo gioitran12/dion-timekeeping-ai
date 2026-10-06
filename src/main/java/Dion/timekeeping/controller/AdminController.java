@@ -11,6 +11,7 @@ import Dion.timekeeping.repository.EmployeeRepository;
 import Dion.timekeeping.repository.FaceProfileRepository;
 import Dion.timekeeping.repository.WorkingHourConfigRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -39,7 +40,8 @@ public class AdminController {
     // 1. QUẢN LÝ NHÂN SỰ (Personnel Management)
     // ==========================================
     @GetMapping("/employees")
-    public String listEmployees(Model model) {
+    public String listEmployees(Model model, Authentication authentication) {
+        populateCurrentEmployee(model, authentication);
         List<Employee> employees = employeeRepository.findAll();
         model.addAttribute("employees", employees);
         model.addAttribute("newEmployee", new Employee());
@@ -105,7 +107,8 @@ public class AdminController {
     // 2. CẤU HÌNH HỆ THỐNG (Set up the system)
     // ==========================================
     @GetMapping("/settings")
-    public String systemSettings(Model model) {
+    public String systemSettings(Model model, Authentication authentication) {
+        populateCurrentEmployee(model, authentication);
         WorkingHourConfig workingHour = workingHourConfigRepository.findFirstByActiveTrue()
                 .orElse(WorkingHourConfig.builder()
                         .shiftName("Ca Hành Chính")
@@ -161,7 +164,8 @@ public class AdminController {
     // 3. ĐĂNG KÝ KHUÔN MẶT (Register a face)
     // ==========================================
     @GetMapping("/register-face")
-    public String registerFacePage(Model model) {
+    public String registerFacePage(Model model, Authentication authentication) {
+        populateCurrentEmployee(model, authentication);
         List<Employee> employees = employeeRepository.findAll();
         model.addAttribute("employees", employees);
         return "admin/register-face";
@@ -175,8 +179,10 @@ public class AdminController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Long employeeId,
-            Model model) {
+            Model model,
+            Authentication authentication) {
 
+        populateCurrentEmployee(model, authentication);
         LocalDate now = LocalDate.now();
         int selectedYear = (year != null) ? year : now.getYear();
         int selectedMonth = (month != null) ? month : now.getMonthValue();
@@ -271,5 +277,12 @@ public class AdminController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(bytes);
+    }
+
+    private void populateCurrentEmployee(Model model, Authentication authentication) {
+        if (authentication != null) {
+            employeeRepository.findByUsername(authentication.getName())
+                    .ifPresent(emp -> model.addAttribute("employee", emp));
+        }
     }
 }

@@ -107,50 +107,27 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 auto;
         }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/dion-theme.css}">
 </head>
 <body>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="brand-header">
-            <a href="/" class="brand-logo">
-                <div class="brand-icon-box"><i class="bi bi-person-bounding-box"></i></div>
-                <div>
-                    <div>DION</div>
-                    <div style="font-size: 0.65rem; color: #60a5fa; letter-spacing: 1.5px;">Digital Innovation</div>
-                </div>
-            </a>
-        </div>
-
-        <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #475569; padding: 16px 20px 8px;">Workspace</div>
-        <a href="/" class="nav-link-custom"><i class="bi bi-house-door-fill"></i> Home</a>
-        <a href="/timekeeping/scan" class="nav-link-custom"><i class="bi bi-camera-video-fill text-info"></i> AI Chấm công</a>
-        <a href="/timekeeping/history" class="nav-link-custom active"><i class="bi bi-clock-fill"></i> Lịch làm việc</a>
-
-        <div sec:authorize="hasRole('ADMIN')">
-            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #475569; padding: 16px 20px 8px;">Quản lý hệ thống</div>
-            <a href="/admin/employees" class="nav-link-custom"><i class="bi bi-people-fill text-primary"></i> Quản lý nhân sự</a>
-            <a href="/admin/register-face" class="nav-link-custom"><i class="bi bi-person-bounding-box text-info"></i> Đăng ký khuôn mặt</a>
-            <a href="/admin/reports" class="nav-link-custom"><i class="bi bi-bar-chart-line-fill text-success"></i> Báo cáo & Thống kê</a>
-            <a href="/admin/settings" class="nav-link-custom"><i class="bi bi-gear-fill text-warning"></i> Cài đặt hệ thống</a>
-        </div>
-
-        <div style="margin-top: auto; padding: 16px 20px;">
-            <a href="/logout" class="nav-link-custom text-danger"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
-        </div>
-    </aside>
+    <aside th:replace="~{fragments/navbar :: sidebar('history')}"></aside>
 
     <!-- MAIN CONTENT -->
     <div class="main-wrapper">
-        <!-- Breadcrumb -->
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="text-muted small m-0">Dion Workplace / Home / <strong>Chấm công</strong></p>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Đã xác định vị trí GPS</span>
-                <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-clock me-1"></i> <span th:text="${currentTimeStr}">11:13</span> - <span th:text="${currentDateStr}">06/10/2026</span></span>
+        <!-- Top Navbar -->
+        <header th:replace="~{fragments/navbar :: topbar('Lịch làm việc')}"></header>
+
+        <main class="content-container">
+            <!-- Breadcrumb info bar -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <p class="text-muted small m-0">Lịch trình làm việc và chấm công cá nhân</p>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Định vị GPS</span>
+                    <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-clock me-1"></i> <span th:text="${currentTimeStr}">11:13</span> - <span th:text="${currentDateStr}">06/10/2026</span></span>
+                </div>
             </div>
-        </div>
 
         <!-- 1. KHUNG CHECK-IN / CHECK-OUT TRUNG TÂM GIỐNG ẢNH 1 -->
         <div class="check-card shadow-sm">
@@ -349,6 +326,7 @@
                 </table>
             </div>
         </div>
+        </main>
     </div>
 
 </body>

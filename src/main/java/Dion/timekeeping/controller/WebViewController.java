@@ -57,10 +57,15 @@ public class WebViewController {
     }
 
     /**
-     * Màn hình AI Webcam Kiosk Chấm Công (Công khai cho toàn bộ nhân viên quét)
+     * Màn hình AI Webcam Kiosk Chấm Công
      */
     @GetMapping("/timekeeping/scan")
-    public String timekeepingScannerPage() {
+    public String timekeepingScannerPage(Model model, Authentication authentication) {
+        String username = authentication != null ? authentication.getName() : null;
+        Employee currentEmployee = username != null ? employeeRepository.findByUsername(username).orElse(null) : null;
+        model.addAttribute("employee", currentEmployee);
+        model.addAttribute("currentDateStr", LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy")));
+        model.addAttribute("currentTimeStr", LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
         return "timekeeping/webcam";
     }
 

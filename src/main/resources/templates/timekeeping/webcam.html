@@ -4,66 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dion Workplace - Chấm công AI</title>
+    <title>Dion Workplace - AI Chấm công</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dion-theme.css}">
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: linear-gradient(180deg, #071534 0%, #0c1c44 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header-nav {
-            padding: 16px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 1.25rem;
-            text-decoration: none;
-        }
-
-        .brand-icon-box {
-            width: 38px;
-            height: 38px;
-            background: #2563eb;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .camera-card {
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 24px;
-            padding: 24px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            max-width: 720px;
+        .scanner-card {
+            background: #ffffff;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            max-width: 760px;
             margin: 0 auto;
         }
 
         .camera-wrapper {
             position: relative;
             width: 100%;
-            height: 420px;
+            height: 440px;
             border-radius: 18px;
             overflow: hidden;
             background: #000;
@@ -102,20 +64,6 @@
             100% { top: 2%; opacity: 0.3; }
         }
 
-        .mode-indicator {
-            border-radius: 12px;
-            font-weight: 700;
-            padding: 10px 24px;
-            font-size: 1rem;
-        }
-
-        .info-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 16px;
-        }
-
         .status-dot {
             width: 10px;
             height: 10px;
@@ -124,118 +72,102 @@
         }
         .status-dot.done { background: #10b981; }
         .status-dot.pending { background: #f59e0b; }
-        .status-dot.none { background: #6b7280; }
+        .status-dot.none { background: #cbd5e1; }
     </style>
 </head>
-<body class="py-2">
+<body>
 
-    <!-- Top Navigation -->
-    <header class="header-nav mb-4">
-        <a href="/" class="brand-logo">
-            <div class="brand-icon-box">
-                <i class="bi bi-person-bounding-box"></i>
+    <!-- 1. SIDEBAR CHUẨN DION WORKPLACE -->
+    <aside th:replace="~{fragments/navbar :: sidebar('scan')}"></aside>
+
+    <!-- 2. MAIN CONTENT WRAPPER -->
+    <div class="main-wrapper">
+        <!-- Top Navbar -->
+        <header th:replace="~{fragments/navbar :: topbar('AI Chấm công')}"></header>
+
+        <!-- Main Body -->
+        <main class="content-container">
+
+            <!-- Loading overlay khi đang kiểm tra trạng thái -->
+            <div id="loadingState" class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="text-secondary fw-semibold">Đang kiểm tra trạng thái chấm công hôm nay...</p>
             </div>
-            <div>
-                <div>DION WORKPLACE</div>
-                <div style="font-size: 0.65rem; color: #60a5fa; letter-spacing: 1.5px;">DIGITAL INNOVATION</div>
+
+            <!-- Done state: đã check-in & check-out hôm nay -->
+            <div id="doneState" class="d-none">
+                <div class="scanner-card text-center py-5">
+                    <div style="font-size: 4rem;">🎉</div>
+                    <h3 class="fw-bold text-success mt-3">Đã hoàn thành chấm công hôm nay!</h3>
+                    <p class="text-secondary">Bạn đã ghi nhận đủ giờ vào (Check-in) và giờ ra (Check-out).</p>
+                    <div class="d-flex gap-3 justify-content-center mt-3" id="doneTimeInfo"></div>
+                    <a href="/timekeeping/history" class="btn btn-primary mt-4 rounded-pill px-4 fw-bold">
+                        <i class="bi bi-calendar-check me-1"></i> Xem lịch sử chấm công
+                    </a>
+                </div>
             </div>
-        </a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-secondary small">
-                <i class="bi bi-person-circle me-1"></i>
-                <span sec:authentication="name">User</span>
-            </span>
-            <a href="/" class="btn btn-outline-light rounded-pill px-3 btn-sm">
-                <i class="bi bi-house-door me-1"></i> Dashboard
-            </a>
-            <a href="/logout" class="btn btn-outline-danger rounded-pill px-3 btn-sm">
-                <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
-            </a>
-        </div>
-    </header>
 
-    <div class="container text-center my-auto pb-4">
-
-        <!-- Loading overlay khi đang kiểm tra trạng thái -->
-        <div id="loadingState" class="py-5">
-            <div class="spinner-border text-primary mb-3" role="status"></div>
-            <p class="text-secondary">Đang kiểm tra trạng thái chấm công hôm nay...</p>
-        </div>
-
-        <!-- Done state: đã check-in & check-out hôm nay -->
-        <div id="doneState" class="d-none">
-            <div class="camera-card text-center py-5">
-                <div style="font-size: 4rem;">✅</div>
-                <h3 class="fw-bold text-success mt-3">Đã hoàn thành chấm công hôm nay!</h3>
-                <p class="text-secondary">Bạn đã Check-in và Check-out đầy đủ.</p>
-                <div class="d-flex gap-3 justify-content-center mt-3" id="doneTimeInfo"></div>
-                <a href="/timekeeping/history" class="btn btn-primary mt-4 rounded-pill px-4">
-                    <i class="bi bi-calendar-check me-1"></i> Xem lịch sử chấm công
-                </a>
-            </div>
-        </div>
-
-        <!-- Main Camera Container -->
-        <div id="mainState" class="d-none">
-            <div class="camera-card">
-                <!-- Header -->
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="text-start">
-                        <h4 class="fw-bold mb-0 text-white">AI Camera Scanner</h4>
-                        <p class="text-secondary small mb-0" id="modeDescription">Đang tải...</p>
-                    </div>
-                    <!-- Chế độ hiện tại (auto-detect, không cần radio button) -->
-                    <div id="modeIndicatorContainer">
-                        <span id="modeIndicator" class="badge fs-6 px-3 py-2 mode-indicator"></span>
-                    </div>
-                </div>
-
-                <!-- Trạng thái hôm nay -->
-                <div class="info-card mb-3 d-flex gap-4 text-start">
-                    <div>
-                        <span class="status-dot" id="dotCheckin"></span>
-                        <span class="small ms-2 text-light">Check-in: <strong id="txtCheckin">--:--</strong></span>
-                    </div>
-                    <div>
-                        <span class="status-dot" id="dotCheckout"></span>
-                        <span class="small ms-2 text-light">Check-out: <strong id="txtCheckout">--:--</strong></span>
-                    </div>
-                    <div class="ms-auto text-end">
-                        <span class="small text-secondary" id="currentDateTxt"></span>
-                    </div>
-                </div>
-
-                <!-- Khung Webcam Stream -->
-                <div class="camera-wrapper mb-3">
-                    <video id="webcam" autoplay playsinline muted></video>
-                    <canvas id="overlay"></canvas>
-                    <div class="scan-bar"></div>
-                </div>
-
-                <!-- Status Indicator -->
-                <div class="mb-3">
-                    <span id="statusBadge" class="badge bg-primary px-4 py-2 fs-6 rounded-pill">
-                        <i class="bi bi-cpu me-1"></i> Đang tải AI Model nhận diện...
-                    </span>
-                </div>
-
-                <!-- Result Box -->
-                <div id="resultBox" class="alert d-none text-start p-3 rounded-4 border-0 shadow"
-                     style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981 !important;">
-                    <div class="d-flex align-items-center justify-content-between">
+            <!-- Main Camera Scanner Container -->
+            <div id="mainState" class="d-none">
+                <div class="scanner-card">
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-3">
                         <div>
-                            <div class="fs-5 fw-bold text-success mb-1" id="resEmployeeName"></div>
-                            <div class="small text-light">Mã NV: <span id="resEmployeeCode" class="fw-bold"></span> | Thời gian: <span id="resTime"></span></div>
+                            <h4 class="fw-bold mb-0 text-dark">AI Camera Scanner</h4>
+                            <p class="text-muted small mb-0" id="modeDescription">Đang tải...</p>
                         </div>
-                        <div class="text-end">
-                            <span class="badge bg-success fs-6" id="resConfidence">--%</span>
-                            <div class="small text-secondary mt-1" id="resStatus"></div>
+                        <div>
+                            <span id="modeIndicator" class="badge fs-6 px-3 py-2 rounded-pill"></span>
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái hôm nay -->
+                    <div class="bg-light p-3 rounded-4 mb-3 d-flex gap-4 text-start border">
+                        <div>
+                            <span class="status-dot" id="dotCheckin"></span>
+                            <span class="small ms-2 text-dark">Check-in: <strong id="txtCheckin">--:--</strong></span>
+                        </div>
+                        <div>
+                            <span class="status-dot" id="dotCheckout"></span>
+                            <span class="small ms-2 text-dark">Check-out: <strong id="txtCheckout">--:--</strong></span>
+                        </div>
+                        <div class="ms-auto text-end">
+                            <span class="small text-muted" id="currentDateTxt"></span>
+                        </div>
+                    </div>
+
+                    <!-- Khung Webcam Stream -->
+                    <div class="camera-wrapper mb-3">
+                        <video id="webcam" autoplay playsinline muted></video>
+                        <canvas id="overlay"></canvas>
+                        <div class="scan-bar"></div>
+                    </div>
+
+                    <!-- Status Indicator -->
+                    <div class="text-center mb-3">
+                        <span id="statusBadge" class="badge bg-primary px-4 py-2 fs-6 rounded-pill">
+                            <i class="bi bi-cpu me-1"></i> Đang tải AI Model nhận diện...
+                        </span>
+                    </div>
+
+                    <!-- Result Box -->
+                    <div id="resultBox" class="alert d-none text-start p-3 rounded-4 border-0 shadow-sm"
+                         style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981 !important;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fs-5 fw-bold text-success mb-1" id="resEmployeeName"></div>
+                                <div class="small text-dark">Mã NV: <span id="resEmployeeCode" class="fw-bold"></span> | Thời gian: <span id="resTime"></span></div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6" id="resConfidence">--%</span>
+                                <div class="small text-secondary mt-1" id="resStatus"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
+        </main>
     </div>
 
     <script>
@@ -249,8 +181,9 @@
         let isCooldown = false;
         let currentLatitude = null;
         let currentLongitude = null;
-        let currentCheckType = 'CHECKIN'; // Được set từ API today-status
+        let currentCheckType = 'CHECKIN';
         let scanningActive = true;
+        let recognizedUser = null; // Lưu thông tin người nhận diện gần nhất để vẽ lên khung
 
         // Lấy GPS
         if (navigator.geolocation) {
@@ -279,12 +212,10 @@
                 document.getElementById('loadingState').classList.add('d-none');
 
                 if (data.hasCheckedIn && data.hasCheckedOut) {
-                    // Đã hoàn thành
                     showDoneState(data);
                     return;
                 }
 
-                // Chưa hoàn thành → set chế độ auto
                 if (!data.hasCheckedIn) {
                     currentCheckType = 'CHECKIN';
                     setModeUI('CHECKIN');
@@ -308,13 +239,13 @@
             document.getElementById('doneState').classList.remove('d-none');
             const container = document.getElementById('doneTimeInfo');
             container.innerHTML = `
-                <div class="info-card px-4">
+                <div class="bg-light border rounded-3 p-3 px-4">
                     <div class="small text-secondary">Check-in</div>
-                    <div class="fw-bold text-success">${data.checkInTime || '--'}</div>
+                    <div class="fw-bold text-success fs-5">${data.checkInTime || '--'}</div>
                 </div>
-                <div class="info-card px-4">
+                <div class="bg-light border rounded-3 p-3 px-4">
                     <div class="small text-secondary">Check-out</div>
-                    <div class="fw-bold text-warning">${data.checkOutTime || '--'}</div>
+                    <div class="fw-bold text-warning fs-5">${data.checkOutTime || '--'}</div>
                 </div>
             `;
         }
@@ -324,11 +255,11 @@
             const desc = document.getElementById('modeDescription');
             if (mode === 'CHECKIN') {
                 indicator.textContent = '🟢 Chế độ: CHECK-IN';
-                indicator.className = 'badge bg-success fs-6 px-3 py-2 mode-indicator';
+                indicator.className = 'badge bg-success fs-6 px-3 py-2 rounded-pill';
                 desc.textContent = 'Nhìn thẳng vào camera để ghi nhận giờ vào làm';
             } else {
                 indicator.textContent = '🟡 Chế độ: CHECK-OUT';
-                indicator.className = 'badge bg-warning text-dark fs-6 px-3 py-2 mode-indicator';
+                indicator.className = 'badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill';
                 desc.textContent = 'Nhìn thẳng vào camera để ghi nhận giờ ra về';
             }
         }
@@ -385,7 +316,69 @@
         }
 
         // =====================
-        // 3. Vòng lặp quét mặt
+        // 3. Hàm vẽ Bounding Box + Tên Người trên Webcam
+        // =====================
+        function drawFaceWithLabel(ctx, box, info) {
+            const { x, y, width, height } = box;
+            const isMatch = info && info.success;
+            const color = isMatch ? '#10b981' : (info && info.message ? '#f59e0b' : '#38bdf8');
+            const bgColor = isMatch ? 'rgba(16, 185, 129, 0.95)' : 'rgba(15, 23, 42, 0.85)';
+
+            // 1. Viền hộp khuôn mặt bo góc
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(x, y, width, height, 12);
+            ctx.stroke();
+
+            // 2. 4 góc định vị công nghệ cao (HUD corners)
+            const cLen = Math.min(24, width / 4);
+            ctx.lineWidth = 4;
+            // Top-left
+            ctx.beginPath(); ctx.moveTo(x, y + cLen); ctx.lineTo(x, y); ctx.lineTo(x + cLen, y); ctx.stroke();
+            // Top-right
+            ctx.beginPath(); ctx.moveTo(x + width - cLen, y); ctx.lineTo(x + width, y); ctx.lineTo(x + width, y + cLen); ctx.stroke();
+            // Bottom-left
+            ctx.beginPath(); ctx.moveTo(x, y + height - cLen); ctx.lineTo(x, y + height); ctx.lineTo(x + cLen, y + height); ctx.stroke();
+            // Bottom-right
+            ctx.beginPath(); ctx.moveTo(x + width - cLen, y + height); ctx.lineTo(x + width, y + height); ctx.lineTo(x + width, y + height - cLen); ctx.stroke();
+
+            // 3. Nhãn tên người đè lên trên đỉnh hộp khuôn mặt
+            let labelText = '🔍 Đang nhận diện...';
+            if (isMatch) {
+                labelText = `👤 ${info.employeeName} (${info.employeeCode}) · ${(info.confidenceScore * 100).toFixed(0)}%`;
+            } else if (info && info.message) {
+                labelText = `⚠️ ${info.message}`;
+            }
+
+            ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+            const textWidth = ctx.measureText(labelText).width;
+            const badgeW = textWidth + 24;
+            const badgeH = 28;
+            const badgeX = x + (width - badgeW) / 2;
+            const badgeY = Math.max(8, y - badgeH - 10);
+
+            // Nền badge
+            ctx.fillStyle = bgColor;
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 7);
+            ctx.fill();
+
+            // Text nhãn: Đảo ngược gương cục bộ để đọc xuôi chiều tự nhiên
+            ctx.save();
+            const centerX = badgeX + badgeW / 2;
+            const centerY = badgeY + badgeH / 2;
+            ctx.translate(centerX, centerY);
+            ctx.scale(-1, 1);
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labelText, 0, 0);
+            ctx.restore();
+        }
+
+        // =====================
+        // 4. Vòng lặp nhận diện
         // =====================
         video.addEventListener('play', () => {
             const displaySize = { width: video.videoWidth || 640, height: video.videoHeight || 480 };
@@ -405,7 +398,10 @@
 
                     if (detection) {
                         const resizedDetections = faceapi.resizeResults(detection, displaySize);
-                        faceapi.draw.drawDetections(canvas, resizedDetections);
+                        const box = resizedDetections.detection.box;
+
+                        // Vẽ khung trước với trạng thái hiện tại
+                        drawFaceWithLabel(ctx, box, recognizedUser);
 
                         const descriptorArray = Array.from(detection.descriptor);
 
@@ -424,15 +420,22 @@
                         });
 
                         const data = await res.json();
+                        recognizedUser = data;
+
+                        // Vẽ lại với thông tin tên người vừa nhận diện được
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        drawFaceWithLabel(ctx, box, data);
+
                         if (data.success) {
                             showResult(data);
                             isCooldown = true;
-                            scanningActive = false; // Dừng quét sau khi thành công
+                            scanningActive = false;
                         } else {
                             statusBadge.innerText = data.message || 'Khuôn mặt chưa khớp';
                             statusBadge.className = 'badge bg-secondary px-4 py-2 fs-6 rounded-pill';
                         }
                     } else {
+                        recognizedUser = null;
                         statusBadge.innerText = 'Vui lòng nhìn thẳng vào camera';
                         statusBadge.className = 'badge bg-secondary px-4 py-2 fs-6 rounded-pill';
                     }
@@ -445,10 +448,9 @@
         });
 
         // =====================
-        // 4. Hiển thị kết quả
+        // 5. Hiển thị kết quả thành công
         // =====================
         function showResult(data) {
-            const checkTypeTxt = data.checkType === 'CHECKIN' ? 'Check-in' : 'Check-out';
             statusBadge.innerHTML = '🎉 ' + data.message + ' — Đang chuyển trang...';
             statusBadge.className = 'badge bg-success px-4 py-2 fs-6 rounded-pill';
 
@@ -459,13 +461,11 @@
             document.getElementById('resStatus').innerText = data.status || 'Hợp lệ';
             document.getElementById('resConfidence').innerText = (data.confidenceScore * 100).toFixed(0) + '%';
 
-            // Chuyển sang trang lịch sử sau 2.5s
             setTimeout(() => {
                 window.location.href = '/timekeeping/history';
             }, 2500);
         }
 
-        // Khởi động
         window.onload = checkTodayStatus;
     </script>
 </body>

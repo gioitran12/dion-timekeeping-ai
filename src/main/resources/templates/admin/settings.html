@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dion Workplace - Cài đặt hệ thống (Set up the system)</title>
-    <!-- Bootstrap 5 -->
+    <title>Dion Workplace - Cài đặt hệ thống</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Leaflet Map CSS (OpenStreetMap / Google Map alternative không cần API Key, hoàn toàn miễn phí) -->
+    <link rel="stylesheet" th:href="@{/css/dion-theme.css}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        .card-custom { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; }
         #map { height: 280px; width: 100%; border-radius: 14px; border: 1px solid #cbd5e1; z-index: 1; }
         .map-search-box { position: relative; }
         .map-search-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; z-index: 999; display: none; }
@@ -23,263 +19,237 @@
         .map-search-item:hover { background: #f8fafc; color: #2563eb; }
     </style>
 </head>
-<body class="p-4">
-    <div class="container-fluid" style="max-width: 1200px;">
-        <!-- Header -->
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <a href="/" class="text-decoration-none text-muted small fw-semibold"><i class="bi bi-arrow-left"></i> Quay lại Dashboard</a>
-                <h2 class="fw-bold mb-1 mt-1">Cài đặt hệ thống (Set up the system)</h2>
-                <p class="text-secondary small mb-0">Thiết lập giờ làm việc chuẩn và cấu hình vị trí bản đồ văn phòng thực tế</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="/admin/employees" class="btn btn-outline-primary rounded-3 fw-semibold"><i class="bi bi-people me-1"></i> Nhân sự</a>
-                <a href="/admin/register-face" class="btn btn-outline-info rounded-3 fw-semibold"><i class="bi bi-person-bounding-box me-1"></i> Quét mặt</a>
-                <a href="/admin/reports" class="btn btn-outline-success rounded-3 fw-semibold"><i class="bi bi-bar-chart-line me-1"></i> Báo cáo</a>
-            </div>
-        </div>
+<body>
 
-        <div th:if="${success}" class="alert alert-success alert-dismissible fade show rounded-3">
-            <span th:text="${success}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show rounded-3">
-            <span th:text="${error}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <!-- SIDEBAR -->
+    <aside th:replace="~{fragments/navbar :: sidebar('settings')}"></aside>
 
-        <div class="row g-4">
-            <!-- 1. CẤU HÌNH GIỜ LÀM (Working hours) -->
-            <div class="col-lg-5">
-                <div class="card-custom p-4 shadow-sm h-100">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <div class="bg-primary-subtle text-primary p-2 rounded-3">
-                            <i class="bi bi-clock-history fs-5"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0">Cấu hình giờ làm (Working hours)</h5>
-                            <span class="text-muted small">Khung giờ ca và thời gian cho phép trễ/sớm</span>
-                        </div>
-                    </div>
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="main-wrapper">
+        <!-- Top Navbar -->
+        <header th:replace="~{fragments/navbar :: topbar('Cài đặt hệ thống')}"></header>
 
-                    <form th:action="@{/admin/settings/working-hours}" method="post">
-                        <input type="hidden" name="id" th:value="${workingHour.id}">
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-secondary">Tên ca làm việc</label>
-                            <input type="text" name="shiftName" class="form-control" th:value="${workingHour.shiftName}" required>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-semibold text-secondary">Giờ vào ca (Start Time)</label>
-                                <input type="time" name="startTime" class="form-control" th:value="${workingHour.startTime}" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-semibold text-secondary">Giờ tan ca (End Time)</label>
-                                <input type="time" name="endTime" class="form-control" th:value="${workingHour.endTime}" required>
-                            </div>
-                        </div>
-                        <div class="row g-2 mb-4">
-                            <div class="col-6">
-                                <label class="form-label small fw-semibold text-secondary">Cho phép đi trễ (phút)</label>
-                                <input type="number" name="lateGraceMinutes" class="form-control" th:value="${workingHour.lateGraceMinutes}">
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-semibold text-secondary">Cho phép về sớm (phút)</label>
-                                <input type="number" name="earlyLeaveGraceMinutes" class="form-control" th:value="${workingHour.earlyLeaveGraceMinutes}">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary fw-bold w-100 py-2 rounded-3">
-                            <i class="bi bi-check-circle me-1"></i> Lưu cấu hình giờ làm
-                        </button>
-                    </form>
+        <!-- Main Body -->
+        <main class="content-container">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1">Cài đặt hệ thống (Set up the system)</h3>
+                    <p class="text-secondary small mb-0">Thiết lập giờ làm việc chuẩn và cấu hình vị trí bản đồ văn phòng thực tế</p>
                 </div>
             </div>
 
-            <!-- 2. VỊ TRÍ BẢN ĐỒ CÔNG TY (Interactive Map Location) -->
-            <div class="col-lg-7">
-                <div class="card-custom p-4 shadow-sm h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-success-subtle text-success p-2 rounded-3">
-                                <i class="bi bi-geo-alt-fill fs-5"></i>
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show rounded-3">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show rounded-3">
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="row g-4">
+                <!-- 1. CẤU HÌNH GIỜ LÀM (Working hours) -->
+                <div class="col-lg-5">
+                    <div class="card-custom p-4 shadow-sm h-100">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="bg-primary-subtle text-primary p-2 rounded-3">
+                                <i class="bi bi-clock-history fs-5"></i>
                             </div>
                             <div>
-                                <h5 class="fw-bold mb-0">Vị trí bản đồ công ty (Map location)</h5>
-                                <span class="text-muted small">Chọn trực tiếp từ bản đồ hoặc GPS hiện tại</span>
+                                <h5 class="fw-bold mb-0">Cấu hình giờ làm (Working hours)</h5>
+                                <span class="text-muted small">Khung giờ ca và thời gian cho phép trễ/sớm</span>
                             </div>
                         </div>
-                        <!-- Nút lấy GPS tự động -->
-                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold" id="btnGetMyGPS">
-                            <i class="bi bi-crosshair me-1"></i> Lấy vị trí của tôi
-                        </button>
+
+                        <form th:action="@{/admin/settings/working-hours}" method="post">
+                            <input type="hidden" name="id" th:value="${workingHour.id}">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Tên ca làm việc</label>
+                                <input type="text" name="shiftName" class="form-control" th:value="${workingHour.shiftName}" required>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Giờ bắt đầu</label>
+                                    <input type="time" name="startTime" class="form-control" th:value="${workingHour.startTime}" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Giờ kết thúc</label>
+                                    <input type="time" name="endTime" class="form-control" th:value="${workingHour.endTime}" required>
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Cho phép trễ (phút)</label>
+                                    <input type="number" name="lateGraceMinutes" class="form-control" th:value="${workingHour.lateGraceMinutes}" min="0">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Cho phép về sớm (phút)</label>
+                                    <input type="number" name="earlyLeaveGraceMinutes" class="form-control" th:value="${workingHour.earlyLeaveGraceMinutes}" min="0">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 rounded-3">
+                                <i class="bi bi-floppy me-1"></i> Lưu cấu hình giờ làm
+                            </button>
+                        </form>
                     </div>
+                </div>
 
-                    <!-- Tìm kiếm địa điểm trên bản đồ -->
-                    <div class="map-search-box mb-2">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                            <input type="text" id="mapSearchInput" class="form-control" placeholder="Tìm kiếm địa chỉ (VD: Keangnam Hanoi, Landmark 81, ...) và Enter">
-                            <button class="btn btn-secondary" type="button" id="btnSearchAddress">Tìm</button>
+                <!-- 2. CẤU HÌNH VỊ TRÍ CÔNG TY TRÊN BẢN ĐỒ (Company Map Location) -->
+                <div class="col-lg-7">
+                    <div class="card-custom p-4 shadow-sm h-100">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-success-subtle text-success p-2 rounded-3">
+                                    <i class="bi bi-geo-alt-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">Vị trí công ty (Map location)</h5>
+                                    <span class="text-muted small">Tọa độ thực tế lấy từ Google Map / OpenStreetMap</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="getCurrentGPS()">
+                                <i class="bi bi-crosshair me-1"></i> Lấy tọa độ hiện tại
+                            </button>
                         </div>
-                        <div class="map-search-results" id="mapSearchResults"></div>
-                    </div>
 
-                    <!-- KHUNG BẢN ĐỒ TƯƠNG TÁC -->
-                    <div id="map" class="mb-3"></div>
-                    <div class="text-muted small mb-3">
-                        <i class="bi bi-info-circle text-primary me-1"></i>
-                        <em>Bạn có thể <strong>click vào bất kỳ điểm nào trên bản đồ</strong> hoặc <strong>kéo thả điểm ghim (marker)</strong> để chọn tọa độ chính xác.</em>
-                    </div>
-
-                    <!-- Form thêm vị trí -->
-                    <form th:action="@{/admin/settings/locations}" method="post" class="mb-4">
-                        <div class="mb-2">
-                            <input type="text" name="name" id="locName" class="form-control" placeholder="Tên trụ sở / Chi nhánh (VD: Trụ sở chính DION)" required>
+                        <!-- Ô tìm kiếm địa chỉ -->
+                        <div class="map-search-box mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                                <input type="text" id="addressSearchInput" class="form-control border-start-0" placeholder="Tìm kiếm địa chỉ thực tế (VD: Cầu Giấy, Hà Nội)...">
+                                <button class="btn btn-primary" type="button" onclick="searchAddress()">Tìm</button>
+                            </div>
+                            <div id="searchResults" class="map-search-results"></div>
                         </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-4">
-                                <label class="form-label small text-muted mb-1">Vĩ độ (Latitude):</label>
-                                <input type="number" step="any" name="latitude" id="locLat" class="form-control" placeholder="Lat" required>
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label small text-muted mb-1">Kinh độ (Longitude):</label>
-                                <input type="number" step="any" name="longitude" id="locLon" class="form-control" placeholder="Long" required>
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label small text-muted mb-1">Bán kính (Mét):</label>
-                                <input type="number" name="allowedRadiusMeters" id="locRadius" class="form-control" placeholder="150" value="150" required>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-success fw-bold w-100 py-2 rounded-3">
-                            <i class="bi bi-plus-circle me-1"></i> Lưu vị trí văn phòng vào hệ thống
-                        </button>
-                    </form>
 
-                    <!-- Danh sách địa điểm đã lưu -->
-                    <h6 class="fw-bold small text-muted text-uppercase mb-2">ĐỊA ĐIỂM ĐÃ LƯU:</h6>
-                    <div class="list-group list-group-flush border rounded-3 overflow-hidden">
-                        <div class="list-group-item d-flex justify-content-between align-items-center p-3" th:each="loc : ${locations}">
-                            <div>
-                                <div class="fw-bold text-dark" th:text="${loc.name}">DION Digital Innovation</div>
-                                <div class="small text-muted" th:text="${'Tọa độ: [' + loc.latitude + ', ' + loc.longitude + '] - Bán kính cho phép: ' + loc.allowedRadiusMeters + 'm'}"></div>
+                        <!-- Khung Bản đồ Leaflet -->
+                        <div id="map" class="mb-3"></div>
+                        <div class="text-muted small mb-3">
+                            <i class="bi bi-info-circle me-1"></i> Click chuột trực tiếp lên bản đồ để chọn tọa độ văn phòng.
+                        </div>
+
+                        <!-- Form lưu vị trí -->
+                        <form th:action="@{/admin/settings/locations}" method="post">
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <label class="form-label small fw-semibold">Tên văn phòng</label>
+                                    <input type="text" name="locationName" class="form-control form-control-sm" placeholder="Trụ sở chính" required>
+                                </div>
+                                <div class="col-3">
+                                    <label class="form-label small fw-semibold">Vĩ độ (Lat)</label>
+                                    <input type="number" step="any" id="formLat" name="latitude" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-3">
+                                    <label class="form-label small fw-semibold">Kinh độ (Lon)</label>
+                                    <input type="number" step="any" id="formLon" name="longitude" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-2">
+                                    <label class="form-label small fw-semibold">Bán kính (m)</label>
+                                    <input type="number" name="allowedRadiusMeters" class="form-control form-control-sm" value="300" required>
+                                </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" th:onclick="'viewOnMap(' + ${loc.latitude} + ',' + ${loc.longitude} + ',' + ${loc.allowedRadiusMeters} + ')'" title="Xem trên bản đồ">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <a th:href="@{'/admin/settings/locations/delete/' + ${loc.id}}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa vị trí này?');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3">
+                                <i class="bi bi-plus-circle me-1"></i> Thêm vị trí văn phòng mới
+                            </button>
+                        </form>
+
+                        <!-- Danh sách địa điểm đã lưu -->
+                        <div class="mt-4" th:if="${!#lists.isEmpty(locations)}">
+                            <h6 class="fw-bold small text-muted text-uppercase mb-2">Địa điểm đã thiết lập:</h6>
+                            <ul class="list-group list-group-flush rounded-3 border">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" th:each="loc : ${locations}">
+                                    <div>
+                                        <div class="fw-bold" th:text="${loc.locationName}">Trụ sở DION</div>
+                                        <div class="small text-muted">
+                                            Tọa độ: <span th:text="${loc.latitude}"></span>, <span th:text="${loc.longitude}"></span>
+                                            (Bán kính <span th:text="${loc.allowedRadiusMeters}"></span>m)
+                                        </div>
+                                    </div>
+                                    <a th:href="@{'/admin/settings/locations/delete/' + ${loc.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa vị trí này?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- Leaflet Map JS -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Mặc định Hà Nội nếu chưa có
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script th:inline="javascript">
         let defaultLat = 21.028511;
         let defaultLon = 105.854444;
-        let defaultRadius = 150;
 
-        const locLatInput = document.getElementById('locLat');
-        const locLonInput = document.getElementById('locLon');
-        const locRadiusInput = document.getElementById('locRadius');
-        const locNameInput = document.getElementById('locName');
+        /*[# th:if="${!#lists.isEmpty(locations)}"]*/
+        defaultLat = /*[[${locations[0].latitude}]]*/ 21.028511;
+        defaultLon = /*[[${locations[0].longitude}]]*/ 105.854444;
+        /*[/]*/
 
-        // 1. Khởi tạo Leaflet Map
         const map = L.map('map').setView([defaultLat, defaultLon], 15);
 
-        // Tile layer bản đồ (OpenStreetMap / Esri World Street)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+            attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Marker có thể kéo thả
         let marker = L.marker([defaultLat, defaultLon], { draggable: true }).addTo(map);
+        let circle = L.circle([defaultLat, defaultLon], { radius: 300, color: '#2563eb', fillOpacity: 0.2 }).addTo(map);
 
-        // Vòng tròn thể hiện bán kính chấm công hợp lệ
-        let circle = L.circle([defaultLat, defaultLon], {
-            color: '#2563eb',
-            fillColor: '#3b82f6',
-            fillOpacity: 0.25,
-            radius: defaultRadius
-        }).addTo(map);
+        document.getElementById('formLat').value = defaultLat;
+        document.getElementById('formLon').value = defaultLon;
 
-        // Hàm cập nhật Form từ tọa độ marker
-        function updatePosition(lat, lon) {
-            locLatInput.value = lat.toFixed(6);
-            locLonInput.value = lon.toFixed(6);
+        function updateMarkerPosition(lat, lon) {
             marker.setLatLng([lat, lon]);
             circle.setLatLng([lat, lon]);
+            map.panTo([lat, lon]);
+            document.getElementById('formLat').value = lat.toFixed(6);
+            document.getElementById('formLon').value = lon.toFixed(6);
         }
 
-        // Khi kéo thả marker trên bản đồ
+        map.on('click', function(e) {
+            updateMarkerPosition(e.latlng.lat, e.latlng.lng);
+        });
+
         marker.on('dragend', function(e) {
             const pos = marker.getLatLng();
-            updatePosition(pos.lat, pos.lng);
+            updateMarkerPosition(pos.lat, pos.lng);
         });
 
-        // Khi click vào bất kỳ đâu trên bản đồ
-        map.on('click', function(e) {
-            updatePosition(e.latlng.lat, e.latlng.lng);
-        });
-
-        // Khi người dùng thay đổi bán kính mét
-        locRadiusInput.addEventListener('input', function() {
-            const r = parseFloat(this.value) || 100;
-            circle.setRadius(r);
-        });
-
-        // 2. Nút "Lấy vị trí của tôi" (GPS thực tế thiết bị)
-        document.getElementById('btnGetMyGPS').addEventListener('click', function() {
+        function getCurrentGPS() {
             if (navigator.geolocation) {
-                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang định vị...';
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        map.setView([lat, lon], 17);
-                        updatePosition(lat, lon);
-                        this.innerHTML = '<i class="bi bi-check-lg"></i> Đã lấy vị trí của bạn';
-                        this.className = 'btn btn-success btn-sm rounded-pill fw-semibold';
-                        if (!locNameInput.value) locNameInput.value = "Vị trí văn phòng hiện tại";
+                    (pos) => {
+                        updateMarkerPosition(pos.coords.latitude, pos.coords.longitude);
                     },
-                    (err) => {
-                        alert('Không lấy được GPS: ' + err.message);
-                        this.innerHTML = '<i class="bi bi-crosshair me-1"></i> Lấy vị trí của tôi';
-                    },
-                    { enableHighAccuracy: true }
+                    (err) => alert('Không thể lấy GPS: ' + err.message)
                 );
             } else {
-                alert('Trình duyệt không hỗ trợ Geolocation GPS.');
+                alert('Trình duyệt không hỗ trợ Geolocation.');
             }
-        });
+        }
 
-        // 3. Tìm kiếm địa chỉ qua OpenStreetMap Nominatim API
         async function searchAddress() {
-            const query = document.getElementById('mapSearchInput').value.trim();
+            const query = document.getElementById('addressSearchInput').value.trim();
             if (!query) return;
 
-            const resultsContainer = document.getElementById('mapSearchResults');
-            resultsContainer.style.display = 'block';
-            resultsContainer.innerHTML = '<div class="p-2 text-muted small">Đang tìm kiếm trên bản đồ...</div>';
+            const resDiv = document.getElementById('searchResults');
+            resDiv.innerHTML = '<div class="p-2 text-muted small">Đang tìm kiếm...</div>';
+            resDiv.style.display = 'block';
 
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=vn`);
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
                 const data = await response.json();
 
                 if (data.length === 0) {
-                    resultsContainer.innerHTML = '<div class="p-2 text-muted small">Không tìm thấy địa điểm phù hợp.</div>';
+                    resDiv.innerHTML = '<div class="p-2 text-muted small">Không tìm thấy địa chỉ.</div>';
                     return;
                 }
 
-                resultsContainer.innerHTML = '';
+                resDiv.innerHTML = '';
                 data.slice(0, 5).forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'map-search-item';
@@ -287,43 +257,16 @@
                     div.onclick = () => {
                         const lat = parseFloat(item.lat);
                         const lon = parseFloat(item.lon);
-                        map.setView([lat, lon], 17);
-                        updatePosition(lat, lon);
-                        locNameInput.value = item.display_name.split(',')[0];
-                        resultsContainer.style.display = 'none';
+                        updateMarkerPosition(lat, lon);
+                        map.setView([lat, lon], 16);
+                        resDiv.style.display = 'none';
                     };
-                    resultsContainer.appendChild(div);
+                    resDiv.appendChild(div);
                 });
             } catch (err) {
-                resultsContainer.innerHTML = '<div class="p-2 text-danger small">Lỗi kết nối bản đồ.</div>';
+                resDiv.innerHTML = '<div class="p-2 text-danger small">Lỗi tìm kiếm: ' + err.message + '</div>';
             }
         }
-
-        document.getElementById('btnSearchAddress').addEventListener('click', searchAddress);
-        document.getElementById('mapSearchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                searchAddress();
-            }
-        });
-
-        // Đóng dropdown tìm kiếm khi click ra ngoài
-        document.addEventListener('click', function(e) {
-            if (!document.querySelector('.map-search-box').contains(e.target)) {
-                document.getElementById('mapSearchResults').style.display = 'none';
-            }
-        });
-
-        // 4. Xem vị trí đã lưu trên bản đồ
-        window.viewOnMap = function(lat, lon, radius) {
-            map.setView([lat, lon], 17);
-            updatePosition(lat, lon);
-            locRadiusInput.value = radius;
-            circle.setRadius(radius);
-        };
-
-        // Khởi tạo giá trị ban đầu vào input
-        updatePosition(defaultLat, defaultLon);
     </script>
 </body>
 </html>
