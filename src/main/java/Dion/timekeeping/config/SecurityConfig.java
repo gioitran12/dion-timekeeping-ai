@@ -44,11 +44,11 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // Disable cho các REST API camera/webcam stream
             .authorizeHttpRequests(auth -> auth
-                // Tài nguyên công khai & API nhận diện webcam (cần mở để kiosk/máy quét chạy tự do)
-                .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/api/timekeeping/**", "/timekeeping/scan").permitAll()
+                // Tài nguyên công khai: chỉ login page + static files
+                .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 // Phân quyền ADMIN: quản lý nhân sự, cấu hình hệ thống, đăng ký khuôn mặt
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                // Tất cả các request khác (Home, Lịch sử...) cần đăng nhập
+                // Tất cả các request khác (Home, Chấm công, API) cần đăng nhập
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

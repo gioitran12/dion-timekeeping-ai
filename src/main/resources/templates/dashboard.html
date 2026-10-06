@@ -1,6 +1,7 @@
 
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -389,20 +390,25 @@
             <i class="bi bi-file-earmark-text"></i> Báo cáo
         </a>
 
-        <!-- Menu Section: QUẢN LÝ (Admin) -->
-        <div class="sidebar-section-title d-flex justify-content-between align-items-center">
-            <span>Quản lý hệ thống</span>
-            <span class="badge bg-danger" style="font-size: 0.6rem;">ADMIN</span>
+        <!-- Menu Section: QUẢN LÝ (Chỉ hiển thị cho ADMIN) -->
+        <div sec:authorize="hasRole('ADMIN')">
+            <div class="sidebar-section-title d-flex justify-content-between align-items-center">
+                <span>Quản lý hệ thống</span>
+                <span class="badge bg-danger" style="font-size: 0.6rem;">ADMIN</span>
+            </div>
+            <a href="/admin/employees" class="nav-link-custom">
+                <i class="bi bi-people-fill text-primary"></i> Quản lý nhân sự
+            </a>
+            <a href="/admin/register-face" class="nav-link-custom">
+                <i class="bi bi-person-bounding-box text-info"></i> Đăng ký khuôn mặt
+            </a>
+            <a href="/admin/reports" class="nav-link-custom">
+                <i class="bi bi-bar-chart-line-fill text-success"></i> Báo cáo & Thống kê
+            </a>
+            <a href="/admin/settings" class="nav-link-custom">
+                <i class="bi bi-sliders text-warning"></i> Cài đặt hệ thống
+            </a>
         </div>
-        <a href="/admin/employees" class="nav-link-custom">
-            <i class="bi bi-people-fill text-primary"></i> Hồ sơ nhân sự
-        </a>
-        <a href="/admin/register-face" class="nav-link-custom">
-            <i class="bi bi-person-bounding-box text-info"></i> Đăng ký khuôn mặt
-        </a>
-        <a href="/admin/settings" class="nav-link-custom">
-            <i class="bi bi-sliders text-warning"></i> Cài đặt hệ thống (Set up system)
-        </a>
 
         <!-- Footer Profile -->
         <div class="sidebar-footer">

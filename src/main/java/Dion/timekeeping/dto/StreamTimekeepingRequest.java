@@ -10,4 +10,5 @@ public class StreamTimekeepingRequest {
     private TimekeepingRecord.CheckType checkType; // CHECKIN hoặc CHECKOUT
     private Double latitude; // GPS hiện tại (nếu có)
     private Double longitude;
+    private String loggedInUsername; // Username từ session - do server gán, không phải client gửi
 }

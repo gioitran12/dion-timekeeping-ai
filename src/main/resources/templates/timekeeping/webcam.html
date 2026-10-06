@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dion Workplace - AI Webcam Chấm công</title>
+    <title>Dion Workplace - Chấm công AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -62,7 +63,7 @@
         .camera-wrapper {
             position: relative;
             width: 100%;
-            height: 440px;
+            height: 420px;
             border-radius: 18px;
             overflow: hidden;
             background: #000;
@@ -101,11 +102,29 @@
             100% { top: 2%; opacity: 0.3; }
         }
 
-        .mode-btn {
+        .mode-indicator {
             border-radius: 12px;
             font-weight: 700;
             padding: 10px 24px;
+            font-size: 1rem;
         }
+
+        .info-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.done { background: #10b981; }
+        .status-dot.pending { background: #f59e0b; }
+        .status-dot.none { background: #6b7280; }
     </style>
 </head>
 <body class="py-2">
@@ -121,57 +140,102 @@
                 <div style="font-size: 0.65rem; color: #60a5fa; letter-spacing: 1.5px;">DIGITAL INNOVATION</div>
             </div>
         </a>
-        <a href="/" class="btn btn-outline-light rounded-pill px-3 btn-sm">
-            <i class="bi bi-house-door me-1"></i> Quay lại Dashboard
-        </a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-secondary small">
+                <i class="bi bi-person-circle me-1"></i>
+                <span sec:authentication="name">User</span>
+            </span>
+            <a href="/" class="btn btn-outline-light rounded-pill px-3 btn-sm">
+                <i class="bi bi-house-door me-1"></i> Dashboard
+            </a>
+            <a href="/logout" class="btn btn-outline-danger rounded-pill px-3 btn-sm">
+                <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
+            </a>
+        </div>
     </header>
 
     <div class="container text-center my-auto pb-4">
+
+        <!-- Loading overlay khi đang kiểm tra trạng thái -->
+        <div id="loadingState" class="py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-secondary">Đang kiểm tra trạng thái chấm công hôm nay...</p>
+        </div>
+
+        <!-- Done state: đã check-in & check-out hôm nay -->
+        <div id="doneState" class="d-none">
+            <div class="camera-card text-center py-5">
+                <div style="font-size: 4rem;">✅</div>
+                <h3 class="fw-bold text-success mt-3">Đã hoàn thành chấm công hôm nay!</h3>
+                <p class="text-secondary">Bạn đã Check-in và Check-out đầy đủ.</p>
+                <div class="d-flex gap-3 justify-content-center mt-3" id="doneTimeInfo"></div>
+                <a href="/timekeeping/history" class="btn btn-primary mt-4 rounded-pill px-4">
+                    <i class="bi bi-calendar-check me-1"></i> Xem lịch sử chấm công
+                </a>
+            </div>
+        </div>
+
         <!-- Main Camera Container -->
-        <div class="camera-card">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div class="text-start">
-                    <h4 class="fw-bold mb-0 text-white">AI Camera Scanner</h4>
-                    <p class="text-secondary small mb-0">Quét video webcam tự động điểm danh real-time</p>
-                </div>
-                <!-- Chọn chế độ Checkin/Checkout -->
-                <div class="btn-group" role="group">
-                    <input type="radio" class="btn-check" name="checkType" id="checkinRadio" value="CHECKIN" checked>
-                    <label class="btn btn-outline-success mode-btn" for="checkinRadio"><i class="bi bi-box-arrow-in-right me-1"></i> Check-in</label>
-
-                    <input type="radio" class="btn-check" name="checkType" id="checkoutRadio" value="CHECKOUT">
-                    <label class="btn btn-outline-warning mode-btn" for="checkoutRadio"><i class="bi bi-box-arrow-right me-1"></i> Check-out</label>
-                </div>
-            </div>
-
-            <!-- Khung Webcam Stream -->
-            <div class="camera-wrapper mb-3">
-                <video id="webcam" autoplay playsinline muted></video>
-                <canvas id="overlay"></canvas>
-                <div class="scan-bar"></div>
-            </div>
-
-            <!-- Status Indicator -->
-            <div class="mb-3">
-                <span id="statusBadge" class="badge bg-primary px-4 py-2 fs-6 rounded-pill">
-                    <i class="bi bi-cpu me-1"></i> Đang tải AI Model nhận diện...
-                </span>
-            </div>
-
-            <!-- Result Box -->
-            <div id="resultBox" class="alert alert-success d-none text-start p-3 rounded-4 border-0 shadow" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981 !important;">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="fs-5 fw-bold text-success mb-1" id="resEmployeeName">Trần Giỏi</div>
-                        <div class="small text-light">Mã NV: <span id="resEmployeeCode" class="fw-bold"></span> | Thời gian: <span id="resTime"></span></div>
+        <div id="mainState" class="d-none">
+            <div class="camera-card">
+                <!-- Header -->
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="text-start">
+                        <h4 class="fw-bold mb-0 text-white">AI Camera Scanner</h4>
+                        <p class="text-secondary small mb-0" id="modeDescription">Đang tải...</p>
                     </div>
-                    <div class="text-end">
-                        <span class="badge bg-success fs-6" id="resConfidence">98%</span>
-                        <div class="small text-secondary mt-1" id="resStatus">Đúng giờ</div>
+                    <!-- Chế độ hiện tại (auto-detect, không cần radio button) -->
+                    <div id="modeIndicatorContainer">
+                        <span id="modeIndicator" class="badge fs-6 px-3 py-2 mode-indicator"></span>
+                    </div>
+                </div>
+
+                <!-- Trạng thái hôm nay -->
+                <div class="info-card mb-3 d-flex gap-4 text-start">
+                    <div>
+                        <span class="status-dot" id="dotCheckin"></span>
+                        <span class="small ms-2 text-light">Check-in: <strong id="txtCheckin">--:--</strong></span>
+                    </div>
+                    <div>
+                        <span class="status-dot" id="dotCheckout"></span>
+                        <span class="small ms-2 text-light">Check-out: <strong id="txtCheckout">--:--</strong></span>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <span class="small text-secondary" id="currentDateTxt"></span>
+                    </div>
+                </div>
+
+                <!-- Khung Webcam Stream -->
+                <div class="camera-wrapper mb-3">
+                    <video id="webcam" autoplay playsinline muted></video>
+                    <canvas id="overlay"></canvas>
+                    <div class="scan-bar"></div>
+                </div>
+
+                <!-- Status Indicator -->
+                <div class="mb-3">
+                    <span id="statusBadge" class="badge bg-primary px-4 py-2 fs-6 rounded-pill">
+                        <i class="bi bi-cpu me-1"></i> Đang tải AI Model nhận diện...
+                    </span>
+                </div>
+
+                <!-- Result Box -->
+                <div id="resultBox" class="alert d-none text-start p-3 rounded-4 border-0 shadow"
+                     style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981 !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fs-5 fw-bold text-success mb-1" id="resEmployeeName"></div>
+                            <div class="small text-light">Mã NV: <span id="resEmployeeCode" class="fw-bold"></span> | Thời gian: <span id="resTime"></span></div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success fs-6" id="resConfidence">--%</span>
+                            <div class="small text-secondary mt-1" id="resStatus"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -185,17 +249,116 @@
         let isCooldown = false;
         let currentLatitude = null;
         let currentLongitude = null;
+        let currentCheckType = 'CHECKIN'; // Được set từ API today-status
+        let scanningActive = true;
 
+        // Lấy GPS
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     currentLatitude = pos.coords.latitude;
                     currentLongitude = pos.coords.longitude;
                 },
-                (err) => console.warn('GPS Info:', err.message)
+                (err) => console.warn('GPS:', err.message)
             );
         }
 
+        // Hiển thị ngày hiện tại
+        const now = new Date();
+        document.getElementById('currentDateTxt').textContent =
+            now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+        // =====================
+        // 1. Kiểm tra trạng thái hôm nay
+        // =====================
+        async function checkTodayStatus() {
+            try {
+                const res = await fetch('/api/timekeeping/today-status');
+                const data = await res.json();
+
+                document.getElementById('loadingState').classList.add('d-none');
+
+                if (data.hasCheckedIn && data.hasCheckedOut) {
+                    // Đã hoàn thành
+                    showDoneState(data);
+                    return;
+                }
+
+                // Chưa hoàn thành → set chế độ auto
+                if (!data.hasCheckedIn) {
+                    currentCheckType = 'CHECKIN';
+                    setModeUI('CHECKIN');
+                    updateCheckinStatus(null, null);
+                } else {
+                    currentCheckType = 'CHECKOUT';
+                    setModeUI('CHECKOUT');
+                    updateCheckinStatus(data.checkInTime, null);
+                }
+
+                document.getElementById('mainState').classList.remove('d-none');
+                initAI();
+
+            } catch (err) {
+                document.getElementById('loadingState').innerHTML =
+                    '<p class="text-danger">Lỗi kết nối: ' + err.message + '</p>';
+            }
+        }
+
+        function showDoneState(data) {
+            document.getElementById('doneState').classList.remove('d-none');
+            const container = document.getElementById('doneTimeInfo');
+            container.innerHTML = `
+                <div class="info-card px-4">
+                    <div class="small text-secondary">Check-in</div>
+                    <div class="fw-bold text-success">${data.checkInTime || '--'}</div>
+                </div>
+                <div class="info-card px-4">
+                    <div class="small text-secondary">Check-out</div>
+                    <div class="fw-bold text-warning">${data.checkOutTime || '--'}</div>
+                </div>
+            `;
+        }
+
+        function setModeUI(mode) {
+            const indicator = document.getElementById('modeIndicator');
+            const desc = document.getElementById('modeDescription');
+            if (mode === 'CHECKIN') {
+                indicator.textContent = '🟢 Chế độ: CHECK-IN';
+                indicator.className = 'badge bg-success fs-6 px-3 py-2 mode-indicator';
+                desc.textContent = 'Nhìn thẳng vào camera để ghi nhận giờ vào làm';
+            } else {
+                indicator.textContent = '🟡 Chế độ: CHECK-OUT';
+                indicator.className = 'badge bg-warning text-dark fs-6 px-3 py-2 mode-indicator';
+                desc.textContent = 'Nhìn thẳng vào camera để ghi nhận giờ ra về';
+            }
+        }
+
+        function updateCheckinStatus(checkInTime, checkOutTime) {
+            const dotIn = document.getElementById('dotCheckin');
+            const dotOut = document.getElementById('dotCheckout');
+            const txtIn = document.getElementById('txtCheckin');
+            const txtOut = document.getElementById('txtCheckout');
+
+            if (checkInTime) {
+                dotIn.className = 'status-dot done';
+                txtIn.textContent = checkInTime;
+            } else {
+                dotIn.className = 'status-dot none';
+                txtIn.textContent = 'Chưa';
+            }
+
+            if (checkOutTime) {
+                dotOut.className = 'status-dot done';
+                txtOut.textContent = checkOutTime;
+            } else {
+                dotOut.className = 'status-dot pending';
+                txtOut.textContent = 'Chưa';
+            }
+        }
+
+        // =====================
+        // 2. Khởi tạo AI Model
+        // =====================
         async function initAI() {
             try {
                 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
@@ -204,7 +367,7 @@
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 isModelLoaded = true;
                 statusBadge.innerHTML = '<i class="bi bi-camera-video me-1"></i> Sẵn sàng! Hãy nhìn vào webcam.';
-                statusBadge.className = 'badge bg-info px-4 py-2 fs-6 rounded-pill text-dark';
+                statusBadge.className = 'badge bg-info text-dark px-4 py-2 fs-6 rounded-pill';
                 startWebcam();
             } catch (err) {
                 statusBadge.innerText = 'Lỗi nạp mô hình: ' + err.message;
@@ -221,12 +384,15 @@
                 });
         }
 
+        // =====================
+        // 3. Vòng lặp quét mặt
+        // =====================
         video.addEventListener('play', () => {
             const displaySize = { width: video.videoWidth || 640, height: video.videoHeight || 480 };
             faceapi.matchDimensions(canvas, displaySize);
 
             setInterval(async () => {
-                if (!isModelLoaded || isProcessingFrame || isCooldown) return;
+                if (!isModelLoaded || isProcessingFrame || isCooldown || !scanningActive) return;
                 isProcessingFrame = true;
 
                 try {
@@ -242,7 +408,6 @@
                         faceapi.draw.drawDetections(canvas, resizedDetections);
 
                         const descriptorArray = Array.from(detection.descriptor);
-                        const selectedCheckType = document.querySelector('input[name="checkType"]:checked').value;
 
                         statusBadge.innerHTML = '<i class="bi bi-search me-1"></i> Đang nhận diện...';
                         statusBadge.className = 'badge bg-warning text-dark px-4 py-2 fs-6 rounded-pill';
@@ -252,7 +417,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 faceDescriptor: descriptorArray,
-                                checkType: selectedCheckType,
+                                checkType: currentCheckType,
                                 latitude: currentLatitude,
                                 longitude: currentLongitude
                             })
@@ -262,13 +427,9 @@
                         if (data.success) {
                             showResult(data);
                             isCooldown = true;
-                            setTimeout(() => {
-                                isCooldown = false;
-                                statusBadge.innerHTML = '<i class="bi bi-camera-video me-1"></i> Sẵn sàng cho lượt tiếp theo';
-                                statusBadge.className = 'badge bg-info text-dark px-4 py-2 fs-6 rounded-pill';
-                            }, 4000);
+                            scanningActive = false; // Dừng quét sau khi thành công
                         } else {
-                            statusBadge.innerText = data.message || 'Khuôn mặt chưa khớp nhân viên';
+                            statusBadge.innerText = data.message || 'Khuôn mặt chưa khớp';
                             statusBadge.className = 'badge bg-secondary px-4 py-2 fs-6 rounded-pill';
                         }
                     } else {
@@ -283,8 +444,12 @@
             }, 400);
         });
 
+        // =====================
+        // 4. Hiển thị kết quả
+        // =====================
         function showResult(data) {
-            statusBadge.innerHTML = '🎉 ' + data.message + ' - Đang chuyển sang trang Chấm công...';
+            const checkTypeTxt = data.checkType === 'CHECKIN' ? 'Check-in' : 'Check-out';
+            statusBadge.innerHTML = '🎉 ' + data.message + ' — Đang chuyển trang...';
             statusBadge.className = 'badge bg-success px-4 py-2 fs-6 rounded-pill';
 
             resultBox.classList.remove('d-none');
@@ -294,13 +459,14 @@
             document.getElementById('resStatus').innerText = data.status || 'Hợp lệ';
             document.getElementById('resConfidence').innerText = (data.confidenceScore * 100).toFixed(0) + '%';
 
-            // Sau khi nhận diện thành công 2.5s thì chuyển về trang Chấm công / Lịch sử
+            // Chuyển sang trang lịch sử sau 2.5s
             setTimeout(() => {
                 window.location.href = '/timekeeping/history';
             }, 2500);
         }
 
-        window.onload = initAI;
+        // Khởi động
+        window.onload = checkTodayStatus;
     </script>
 </body>
 </html>
