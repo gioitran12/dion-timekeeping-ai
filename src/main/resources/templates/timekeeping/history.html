@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dion Workplace - Chấm công & Lịch sử</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-bg: #071534;
+            --main-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --primary-blue: #2563eb;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--main-bg);
+            color: #0f172a;
+            margin: 0;
+        }
+
+        /* SIDEBAR (THEO CHUẨN DION WORKPLACE) */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #071534 0%, #0c1c44 100%);
+            min-height: 100vh;
+            color: #94a3b8;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            display: flex; flex-direction: column;
+            z-index: 1000;
+        }
+
+        .brand-header { padding: 24px 20px; display: flex; align-items: center; justify-content: space-between; }
+        .brand-logo { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 1.25rem; text-decoration: none; }
+        .brand-icon-box { width: 38px; height: 38px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .nav-link-custom { display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: #94a3b8; font-size: 0.92rem; font-weight: 500; text-decoration: none; border-radius: 10px; margin: 2px 12px; }
+        .nav-link-custom:hover { color: #fff; background-color: #122858; }
+        .nav-link-custom.active { background-color: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+        .main-wrapper { margin-left: 250px; min-height: 100vh; padding: 24px 32px; }
+        .card-custom { background: #fff; border-radius: 20px; border: 1px solid var(--card-border); }
+
+        /* CHECKIN / CHECKOUT HERO CARD */
+        .check-card {
+            background: #fff;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .btn-check-action {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff;
+            border-radius: 16px;
+            padding: 16px 32px;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s;
+            min-width: 170px;
+        }
+        .btn-check-action:hover {
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.45);
+        }
+
+        /* 4 STATS CARDS */
+        .stat-item {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .stat-val { font-size: 1.7rem; font-weight: 800; line-height: 1; }
+
+        /* HEATMAP CELLS */
+        .heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+        .heatmap-cell { aspect-ratio: 1; border-radius: 6px; background: #f1f5f9; }
+        .heatmap-cell.good { background: #e0f2fe; }
+        .heatmap-cell.late { background: #fecdd3; }
+        .heatmap-cell.today { border: 2px solid #2563eb; background: #bfdbfe; }
+
+        /* PERCENT CIRCLE */
+        .percent-box {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 8px solid #10b981;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand-header">
+            <a href="/" class="brand-logo">
+                <div class="brand-icon-box"><i class="bi bi-person-bounding-box"></i></div>
+                <div>
+                    <div>DION</div>
+                    <div style="font-size: 0.65rem; color: #60a5fa; letter-spacing: 1.5px;">Digital Innovation</div>
+                </div>
+            </a>
+        </div>
+
+        <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #475569; padding: 16px 20px 8px;">Workspace</div>
+        <a href="/" class="nav-link-custom"><i class="bi bi-house-door-fill"></i> Home</a>
+        <a href="/timekeeping/history" class="nav-link-custom active"><i class="bi bi-clock-fill"></i> Chấm công</a>
+        <a href="/timekeeping/scan" class="nav-link-custom"><i class="bi bi-camera-video-fill text-info"></i> AI Camera Kiosk</a>
+
+        <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #475569; padding: 16px 20px 8px;">Quản lý</div>
+        <a href="/admin/employees" class="nav-link-custom"><i class="bi bi-people-fill"></i> Hồ sơ nhân sự</a>
+        <a href="/admin/settings" class="nav-link-custom"><i class="bi bi-gear-fill"></i> Cài đặt hệ thống</a>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+        <!-- Breadcrumb -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <p class="text-muted small m-0">Dion Workplace / Home / <strong>Chấm công</strong></p>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Đã xác định vị trí GPS</span>
+                <span class="badge bg-light text-dark border px-3 py-2"><i class="bi bi-clock me-1"></i> <span th:text="${currentTimeStr}">11:13</span> - <span th:text="${currentDateStr}">06/10/2026</span></span>
+            </div>
+        </div>
+
+        <!-- 1. KHUNG CHECK-IN / CHECK-OUT TRUNG TÂM GIỐNG ẢNH 1 -->
+        <div class="check-card shadow-sm">
+            <div>
+                <span class="badge bg-primary-subtle text-primary mb-2 fw-semibold">● Shift in progress</span>
+                <h2 class="fw-bold m-0">Ca làm việc <span class="fs-4 text-muted fw-normal">09:00–18:30</span></h2>
+                <p class="text-secondary small mt-1 mb-0">Hệ thống yêu cầu quét AI Camera và nằm trong bán kính vị trí công ty để tính công chuẩn 8 tiếng.</p>
+                <div class="mt-2 text-primary small fw-semibold" th:if="${todayAttendance != null and todayAttendance.checkInTime != null}">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> Đã Check-in lúc: <span th:text="${#temporals.format(todayAttendance.checkInTime, 'HH:mm')}">08:45</span>
+                    <span th:if="${todayAttendance.checkOutTime != null}">
+                        | Check-out lúc: <span th:text="${#temporals.format(todayAttendance.checkOutTime, 'HH:mm')}">18:00</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Nút quét mặt: Tự động đổi giữa Check-in hoặc Check-out -->
+            <div>
+                <a href="/timekeeping/scan" class="btn-check-action">
+                    <i class="bi bi-camera fs-3 mb-1"></i>
+                    <span class="fs-5" th:if="${todayAttendance == null or todayAttendance.checkInTime == null}">Check-in</span>
+                    <span class="fs-5" th:if="${todayAttendance != null and todayAttendance.checkInTime != null and todayAttendance.checkOutTime == null}">Check-out</span>
+                    <span class="fs-5" th:if="${todayAttendance != null and todayAttendance.checkOutTime != null}">Đã hoàn tất</span>
+                    <small style="font-size: 0.72rem; opacity: 0.85;">Quét AI Camera + GPS</small>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. 4 THẺ THỐNG KÊ (4 STAT CARDS) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-item shadow-sm">
+                    <div class="stat-icon bg-light text-secondary"><i class="bi bi-calendar-check"></i></div>
+                    <div>
+                        <div class="text-muted small fw-semibold">NGÀY HIỆN DIỆN</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="stat-val" th:text="${presentDays}">4</span>
+                            <span class="text-muted small">30 ngày gần nhất</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-item shadow-sm">
+                    <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-check2-all"></i></div>
+                    <div>
+                        <div class="text-muted small fw-semibold">ĐỦ CHECK-OUT</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="stat-val text-success" th:text="${completedCheckouts}">3</span>
+                            <span class="text-muted small">Ngày hoàn chỉnh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-item shadow-sm">
+                    <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-clock-history"></i></div>
+                    <div>
+                        <div class="text-muted small fw-semibold">TỔNG THỜI GIAN</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="stat-val text-primary" th:text="${totalHours + 'h'}">21.2h</span>
+                            <span class="text-muted small">Đã ghi nhận</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-item shadow-sm">
+                    <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div>
+                        <div class="text-muted small fw-semibold">ĐI MUỘN</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="stat-val text-warning" th:text="${lateCount}">2</span>
+                            <span class="text-muted small">Cần cải thiện</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. LỊCH CHẤM CÔNG 12 TUẦN & TỶ LỆ ĐÚNG GIỜ -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-7">
+                <div class="card-custom p-4 shadow-sm h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div>
+                            <span class="text-primary small fw-bold">12 TUẦN · THỨ 2 → CHỦ NHẬT</span>
+                            <h5 class="fw-bold m-0 mt-1">Lịch chấm công</h5>
+                        </div>
+                        <div class="small text-muted d-flex gap-3">
+                            <span><span class="badge bg-success p-1 rounded-circle me-1"></span> Đúng giờ</span>
+                            <span><span class="badge bg-warning p-1 rounded-circle me-1"></span> Đi muộn</span>
+                            <span><span class="badge bg-danger p-1 rounded-circle me-1"></span> Thiếu</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-grid mt-3">
+                        <div class="heatmap-cell good" th:each="i : ${#numbers.sequence(1, 48)}"></div>
+                        <div class="heatmap-cell late" th:each="i : ${#numbers.sequence(1, 6)}"></div>
+                        <div class="heatmap-cell today" th:each="i : ${#numbers.sequence(1, 6)}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card-custom p-4 shadow-sm h-100 text-center">
+                    <span class="text-muted small fw-semibold d-block text-start">30 NGÀY GẦN NHẤT</span>
+                    <h5 class="fw-bold text-start mb-4">Tỷ lệ đúng giờ</h5>
+                    
+                    <div class="percent-box mb-3" th:text="${onTimePercentage + '%'}">
+                        95%
+                    </div>
+                    <p class="text-muted small mb-0"><span th:text="${presentDays}">4</span> ngày hiện diện, <span th:text="${lateCount}">2</span> lượt cần chú ý.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. BẢNG NHẬT KÝ CHẤM CÔNG THEO NGÀY GIỐNG ẢNH 2 -->
+        <div class="card-custom p-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <span class="text-primary small fw-bold text-uppercase">Nhật ký chấm công</span>
+                    <h4 class="fw-bold m-0 mt-1">Lịch sử chấm công</h4>
+                    <p class="text-secondary small mb-0">Theo dõi chi tiết giờ vào, giờ ra, thời lượng làm việc (chuẩn 8 giờ) và trạng thái</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" style="width: 180px;">
+                        <option>Tất cả trạng thái</option>
+                        <option>Hợp lệ</option>
+                        <option>Đi muộn</option>
+                        <option>Thiếu thời gian làm việc</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm px-3 fw-bold"><i class="bi bi-funnel me-1"></i> Lọc dữ liệu</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>NGÀY</th>
+                            <th>CA</th>
+                            <th>GIỜ VÀO / RA</th>
+                            <th>THỜI LƯỢNG</th>
+                            <th>TRẠNG THÁI</th>
+                            <th class="text-end">CHI TIẾT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dữ liệu thực tế từ database -->
+                        <tr th:each="row : ${dailyList}">
+                            <td>
+                                <div class="fw-bold text-dark" th:text="${#temporals.format(row.workDate, 'dd/MM/yyyy')}">06/10/2026</div>
+                                <div class="text-muted small" th:text="${#temporals.format(row.workDate, 'EEEE')}">Thứ 3</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${row.shiftName}">Ca làm việc DION 09:00–18:30</div>
+                                <div class="text-muted small">09:00–18:30</div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark" th:text="${row.checkInTime != null ? #temporals.format(row.checkInTime, 'HH:mm') : '--:--'}">08:45</span>
+                                <span class="text-muted mx-1">→</span>
+                                <span class="fw-bold text-dark" th:text="${row.checkOutTime != null ? #temporals.format(row.checkOutTime, 'HH:mm') : '—'}">18:04</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold" th:text="${row.totalMinutesWorked != null ? (row.totalMinutesWorked + ' phút') : '0 phút'}">457 phút</span>
+                                <div class="text-muted small" th:if="${row.totalMinutesWorked != null}" th:text="${'(' + (row.totalMinutesWorked / 60) + 'h ' + (row.totalMinutesWorked % 60) + 'p)'}"></div>
+                            </td>
+                            <td>
+                                <!-- Trạng thái: Hợp lệ / Đi muộn / Thiếu thời gian làm việc -->
+                                <span class="badge" 
+                                      th:classappend="${row.status == 'Hợp lệ' ? 'bg-primary-subtle text-primary' : (row.status == 'Đi muộn' ? 'bg-warning-subtle text-warning' : 'bg-danger-subtle text-danger')}" 
+                                      th:text="${row.status}">
+                                    Hợp lệ
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Xem chi tiết <i class="bi bi-arrow-right"></i></button>
+                            </td>
+                        </tr>
+
+                        <!-- Hiển thị dữ liệu mẫu nếu chưa có dữ liệu DB -->
+                        <tr th:if="${dailyList.isEmpty()}">
+                            <td>
+                                <div class="fw-bold text-dark">06/10/2026</div>
+                                <div class="text-muted small">Hôm nay</div>
+                            </td>
+                            <td>Ca làm việc DION 09:00–18:30</td>
+                            <td>08:45 → —</td>
+                            <td>0 phút</td>
+                            <td><span class="badge bg-primary-subtle text-primary">Đang trong ca</span></td>
+                            <td class="text-end"><button class="btn btn-sm btn-outline-primary rounded-pill px-3">Xem chi tiết →</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

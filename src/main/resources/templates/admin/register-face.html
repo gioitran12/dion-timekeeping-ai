@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dion Workplace - Đăng ký khuôn mặt</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .camera-box { position: relative; width: 480px; height: 360px; border-radius: 16px; overflow: hidden; background: #000; margin: 0 auto; }
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); pointer-events: none; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container" style="max-width: 800px;">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">Đăng ký khuôn mặt nhân viên</h3>
+                <p class="text-secondary small mb-0">Thu thập Face Descriptor 128 chiều từ Webcam cho nhân viên mới</p>
+            </div>
+            <a href="/" class="btn btn-outline-secondary rounded-pill btn-sm">Quay lại</a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Chọn nhân viên:</label>
+                <select class="form-select" id="employeeSelect">
+                    <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.fullName + ' (' + emp.employeeCode + ') - ' + emp.department}"></option>
+                </select>
+            </div>
+
+            <div class="camera-box mb-3">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas id="overlay"></canvas>
+            </div>
+
+            <div class="text-center">
+                <span id="enrollStatus" class="badge bg-secondary p-2 px-3 mb-3">Đang mở camera & AI Model...</span>
+                <br>
+                <button id="btnCaptureFace" class="btn btn-primary px-4 py-2 rounded-3 fw-bold" disabled>
+                    <i class="bi bi-camera me-1"></i> Quét & Đăng ký khuôn mặt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('overlay');
+        const enrollStatus = document.getElementById('enrollStatus');
+        const btnCapture = document.getElementById('btnCaptureFace');
+        let currentDescriptor = null;
+
+        async function init() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+            navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 } })
+                .then(stream => { video.srcObject = stream; })
+                .catch(err => enrollStatus.innerText = 'Lỗi camera: ' + err.message);
+        }
+
+        video.addEventListener('play', () => {
+            const displaySize = { width: 480, height: 360 };
+            faceapi.matchDimensions(canvas, displaySize);
+
+            setInterval(async () => {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (detection) {
+                    const resized = faceapi.resizeResults(detection, displaySize);
+                    faceapi.draw.drawDetections(canvas, resized);
+                    currentDescriptor = Array.from(detection.descriptor);
+                    enrollStatus.className = 'badge bg-success p-2 px-3 mb-3';
+                    enrollStatus.innerText = 'Đã bắt được khuôn mặt rõ nét! Bạn có thể bấm Đăng ký.';
+                    btnCapture.disabled = false;
+                } else {
+                    currentDescriptor = null;
+                    enrollStatus.className = 'badge bg-warning text-dark p-2 px-3 mb-3';
+                    enrollStatus.innerText = 'Vui lòng nhìn thẳng vào khung hình...';
+                    btnCapture.disabled = true;
+                }
+            }, 300);
+        });
+
+        btnCapture.onclick = async () => {
+            if (!currentDescriptor) return;
+            const empId = document.getElementById('employeeSelect').value;
+            btnCapture.disabled = true;
+            enrollStatus.innerText = 'Đang lưu vào SQL Server...';
+
+            const res = await fetch('/api/timekeeping/register-face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employeeId: empId,
+                    faceDescriptor: currentDescriptor
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert('Đăng ký khuôn mặt thành công cho nhân viên!');
+                window.location.href = '/timekeeping/scan';
+            } else {
+                alert('Lỗi: ' + data.message);
+                btnCapture.disabled = false;
+            }
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>

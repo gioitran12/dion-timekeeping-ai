@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dion Workplace - Quản lý nhân sự</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .table-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; }
+        .avatar-tag { width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container-fluid" style="max-width: 1200px;">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <a href="/" class="text-decoration-none text-muted small"><i class="bi bi-arrow-left"></i> Quay lại Dashboard</a>
+                <h3 class="fw-bold mb-1 mt-1">Hồ sơ nhân sự (Personnel Management)</h3>
+                <p class="text-secondary small mb-0">Quản lý danh sách nhân viên, tài khoản và phân quyền</p>
+            </div>
+            <div>
+                <button class="btn btn-primary rounded-3 fw-bold" data-bs-toggle="modal" data-bs-target="#employeeModal">
+                    <i class="bi bi-person-plus-fill me-1"></i> Thêm nhân viên mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Employee Table -->
+        <div class="table-card p-4 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nhân viên</th>
+                            <th>Mã NV</th>
+                            <th>Phòng ban</th>
+                            <th>Chức vụ</th>
+                            <th>Vai trò (Role)</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="emp : ${employees}">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-tag" th:text="${#strings.substring(emp.fullName, 0, 1)}">T</div>
+                                    <div>
+                                        <div class="fw-bold text-dark" th:text="${emp.fullName}">Trần Giỏi</div>
+                                        <div class="text-muted small" th:text="${emp.email}">gioi@dion.vn</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary fw-semibold" th:text="${emp.employeeCode}">DION001</span></td>
+                            <td th:text="${emp.department}">Kỹ thuật · AI</td>
+                            <td th:text="${emp.position}">AI Engineer</td>
+                            <td>
+                                <span class="badge" th:classappend="${emp.role.name() == 'ADMIN'} ? 'bg-danger' : 'bg-primary'" th:text="${emp.role}">EMPLOYEE</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success" th:if="${emp.active}">Hoạt động</span>
+                                <span class="badge bg-secondary" th:unless="${emp.active}">Khóa</span>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/admin/register-face}" class="btn btn-sm btn-outline-info me-1" title="Quét mặt AI">
+                                    <i class="bi bi-camera"></i>
+                                </a>
+                                <a th:href="@{'/admin/employees/delete/' + ${emp.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Nhân viên -->
+    <div class="modal fade" id="employeeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form th:action="@{/admin/employees/save}" method="post">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Thêm mới nhân sự</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Mã nhân viên</label>
+                                <input type="text" name="employeeCode" class="form-control" placeholder="NV001" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Họ và tên</label>
+                                <input type="text" name="fullName" class="form-control" placeholder="Nguyễn Văn A" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Phòng ban</label>
+                                <input type="text" name="department" class="form-control" placeholder="Phòng Kỹ Thuật" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Chức vụ</label>
+                                <input type="text" name="position" class="form-control" placeholder="Lập trình viên">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="a@dion.vn">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Số điện thoại</label>
+                                <input type="text" name="phone" class="form-control" placeholder="0912345678">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Tên đăng nhập</label>
+                                <input type="text" name="username" class="form-control" placeholder="username" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Mật khẩu</label>
+                                <input type="password" name="password" class="form-control" placeholder="Mặc định 123456">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Phân quyền</label>
+                                <select name="role" class="form-select">
+                                    <option value="EMPLOYEE">EMPLOYEE (Nhân viên)</option>
+                                    <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary fw-bold px-4">Lưu nhân sự</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
